@@ -17,7 +17,7 @@
 
         body {
             font-family: var(--font-family);
-            background-color: #ecf0f1;
+            background-color: #f4f6f9;
             margin: 0;
             padding: 0;
         }
@@ -407,6 +407,97 @@
             font-size: 1.2rem;
             margin-top: 2rem;
         }
+
+        .filter-section {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .filter-input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 50%;
+        }
+
+        .import-section {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .import-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .import-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -434,6 +525,10 @@
                     <input type="file" id="fileInput" accept=".csv">
                     <button class="process-btn" onclick="processFile()" disabled>ประมวลผลไฟล์</button>
                 </div>
+            </div>
+
+            <div class="filter-section">
+                <input type="text" id="filterInput" class="filter-input" placeholder="ค้นหาร้านค้า..." oninput="filterTable()">
             </div>
 
             <div id="noDataMessage" class="no-data-message" style="display: none;">ไม่มีข้อมูลที่ตรงกัน</div>
@@ -501,6 +596,10 @@
                     <input type="text" id="bankAccountNumber" placeholder="เลขบัญชี">
                     <button onclick="addBankDetails()">เพิ่มข้อมูล</button>
                 </div>
+                <div class="import-section">
+                    <input type="file" id="bankFileInput" accept=".csv" style="display: none;" onchange="importBankDetails()">
+                    <button class="import-btn" onclick="document.getElementById('bankFileInput').click()">นำเข้าข้อมูลจาก CSV</button>
+                </div>
                 <table class="bank-details-table">
                     <thead>
                         <tr>
@@ -515,6 +614,36 @@
                 </table>
             </div>
         </div>
+    </div>
+
+    <div id="columnMappingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>แมปคอลัมน์</h2>
+            <form id="columnMappingForm">
+                <div>
+                    <label for="merchantColumn">ร้านค้า:</label>
+                    <select id="merchantColumn" required></select>
+                </div>
+                <div>
+                    <label for="accountNameColumn">ชื่อบัญชี:</label>
+                    <select id="accountNameColumn" required></select>
+                </div>
+                <div>
+                    <label for="bankNameColumn">ธนาคาร:</label>
+                    <select id="bankNameColumn" required></select>
+                </div>
+                <div>
+                    <label for="accountNumberColumn">เลขบัญชี:</label>
+                    <select id="accountNumberColumn" required></select>
+                </div>
+                <button type="submit">ยืนยัน</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="overlay" id="processingOverlay">
+        <div class="spinner"></div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
@@ -743,19 +872,24 @@
         const CONFIG = {
             requiredColumns: {
                 tasks: ['ORDER ID', 'AGENT NAME', 'TOTAL AGENT EARNINGS'],
-                orders: ['ORDER ID', 'GRAND TOTAL']
+                orders: ['Order ID', 'Grand Total']
             },
             columnAliases: {
-                'TOTAL AGENT EARNINGS': [
-                    'totalagentearnings', 
-                    'agent_earnings', 
-                    'ค่าตอบแทน',
-                    'earnings'
+                'Order ID': [
+                    'Order ID', 
+                    'ORDER ID'
                 ],
-                'GRAND TOTAL': [
-                    'grandtotal',
-                    'total',
-                    'ยอดรวมทั้งหมด'
+                'Grand Total': [
+                    'Grand Total', 
+                    'GRAND TOTAL'
+                ],
+                'TOTAL AGENT EARNINGS': [
+                    'Total Agent Earnings', 
+                    'TOTAL AGENT EARNINGS'
+                ],
+                'AGENT NAME': [
+                    'Agent Name', 
+                    'AGENT NAME'
                 ]
             }
         };
@@ -825,9 +959,9 @@
 
                 const orderMap = new Map();
                 orders.forEach(order => {
-                    const orderId = order['ORDER ID'].toString().trim().toUpperCase();
+                    const orderId = order['Order ID'].toString().trim().toUpperCase();
                     orderMap.set(orderId, {
-                        grandTotal: parseFloat(order['GRAND TOTAL']) || 0
+                        grandTotal: parseFloat(order['Grand Total']) || 0
                     });
                 });
 
@@ -972,6 +1106,113 @@
             updateBankDetailsList();
         }
 
+        let tempColumnMap = {};
+
+        function openModal(headers) {
+            const modal = document.getElementById('columnMappingModal');
+            const merchantColumn = document.getElementById('merchantColumn');
+            const accountNameColumn = document.getElementById('accountNameColumn');
+            const bankNameColumn = document.getElementById('bankNameColumn');
+            const accountNumberColumn = document.getElementById('accountNumberColumn');
+
+            [merchantColumn, accountNameColumn, bankNameColumn, accountNumberColumn].forEach(select => {
+                select.innerHTML = '';
+                headers.forEach(header => {
+                    const option = document.createElement('option');
+                    option.value = header;
+                    option.textContent = header;
+                    select.appendChild(option);
+                });
+            });
+
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('columnMappingModal').style.display = 'none';
+        }
+
+        document.getElementById('columnMappingForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            tempColumnMap = {
+                merchant: document.getElementById('merchantColumn').value,
+                accountName: document.getElementById('accountNameColumn').value,
+                bankName: document.getElementById('bankNameColumn').value,
+                accountNumber: document.getElementById('accountNumberColumn').value
+            };
+            closeModal();
+            importBankDetails();
+        });
+
+        async function importBankDetails() {
+            const file = document.getElementById('bankFileInput').files[0];
+            if (!file) {
+                showNotification('กรุณาเลือกไฟล์ CSV', 'error');
+                return;
+            }
+
+            try {
+                const overlay = document.getElementById('processingOverlay');
+                overlay.style.display = 'flex';
+
+                const data = await parseCSV(file);
+                console.log('Parsed CSV Data:', data); // Debugging log
+
+                if (!tempColumnMap.merchant || !tempColumnMap.accountName || !tempColumnMap.bankName || !tempColumnMap.accountNumber) {
+                    openModal(Object.keys(data[0]));
+                    return;
+                }
+
+                let importCount = 0;
+                let duplicateCount = 0;
+
+                data.forEach(row => {
+                    const merchantName = row[tempColumnMap.merchant]?.trim();
+                    const accountName = row[tempColumnMap.accountName]?.trim();
+                    const bankName = row[tempColumnMap.bankName]?.trim();
+                    const accountNumber = row[tempColumnMap.accountNumber]?.trim();
+
+                    console.log('Row Data:', { merchantName, accountName, bankName, accountNumber }); // Debugging log
+
+                    if (merchantName && accountName && bankName && accountNumber) {
+                        if (bankDetails[merchantName]) {
+                            duplicateCount++;
+                        } else {
+                            bankDetails[merchantName] = { accountName, bankName, accountNumber };
+                            importCount++;
+                        }
+                    }
+                });
+
+                localStorage.setItem('bankDetails', JSON.stringify(bankDetails));
+                updateBankDetailsList();
+                showNotification(`นำเข้าข้อมูลสำเร็จ: ${importCount} รายการ, ซ้ำ: ${duplicateCount} รายการ`, 'success');
+            } catch (error) {
+                showNotification(`เกิดข้อผิดพลาด: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('processingOverlay').style.display = 'none';
+            }
+        }
+
+        async function parseCSV(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.errors.length) {
+                            reject(new Error('เกิดข้อผิดพลาดในการอ่านไฟล์ CSV'));
+                        } else {
+                            resolve(results.data);
+                        }
+                    },
+                    error: function(error) {
+                        reject(new Error('รูปแบบไฟล์ไม่ถูกต้อง'));
+                    }
+                });
+            });
+        }
+
         function updateBankDetailsList() {
             const bankDetailsList = document.getElementById('bankDetailsList');
             bankDetailsList.innerHTML = '';
@@ -990,6 +1231,27 @@
                 `;
                 bankDetailsList.appendChild(tr);
             }
+        }
+
+        function filterTable() {
+            const filter = document.getElementById('filterInput').value.toUpperCase();
+            const rows = document.querySelectorAll('#outputTable tbody tr');
+            let visibleRows = 0;
+
+            rows.forEach(row => {
+                const merchantCell = row.querySelector('td:first-child');
+                if (merchantCell) {
+                    const merchantName = merchantCell.textContent || merchantCell.innerText;
+                    if (merchantName.toUpperCase().indexOf(filter) > -1) {
+                        row.style.display = '';
+                        visibleRows++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+
+            document.getElementById('noDataMessage').style.display = visibleRows ? 'none' : 'block';
         }
 
         document.addEventListener('DOMContentLoaded', () => {
