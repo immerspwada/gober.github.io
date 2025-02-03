@@ -140,6 +140,8 @@
             margin: 2rem 0;
             overflow: hidden;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+            background-color: white;
+            border-radius: 10px;
         }
 
         th, td {
@@ -164,7 +166,7 @@
             font-family: 'Courier New', Courier, monospace;
         }
 
-        .copy-btn {
+        .copy-btn, .show-btn {
             background-color: var(--success-color);
             color: white;
             border: none;
@@ -174,7 +176,7 @@
             transition: background-color 0.3s;
         }
 
-        .copy-btn:hover {
+        .copy-btn:hover, .show-btn:hover {
             background-color: #219a52;
         }
 
@@ -328,6 +330,8 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
         }
 
         .bank-details-table th, .bank-details-table td {
@@ -337,7 +341,7 @@
         }
 
         .bank-details-table th {
-            background-color: var(--primary-color);
+            background-color: var(--secondary-color);
             color: white;
         }
 
@@ -374,7 +378,7 @@
         }
 
         .bank-details-table .copy-btn {
-            background-color: var(--success-color);
+            background-color: var (--success-color);
             color: white;
             border: none;
         }
@@ -682,6 +686,7 @@
         });
 
         async function fetchBankDetails(merchantName) {
+            // Placeholder for database fetch logic
             return bankDetails[merchantName] || null;
         }
 
@@ -715,7 +720,7 @@
             }
         }
 
-        function processCSV(file) {
+        async function processCSV(file) {
             return new Promise((resolve, reject) => {
                 Papa.parse(file, {
                     header: true,
